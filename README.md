@@ -1,20 +1,29 @@
 # jumpingsharks
 
-OpenTofu configuration for Hetzner jump hosts. It provisions SSH keys, a firewall, servers, and reverse DNS records, then outputs connection details and an Ansible inventory.
+OpenTofu configuration for Hetzner Cloud jump hosts that serve as entry points into the **sharkshere** home lab network. Provisions servers, firewall rules, SSH keys, DNS records, and outputs an Ansible inventory for downstream configuration.
+
+## Infrastructure
+
+| Host | Location | Type | OS | DNS |
+|------|----------|------|----|-----|
+| **jump-eu-central** | Nuremberg (nbg1) | CX22 | Debian 12 | `jump.fedishark.eu` |
+| **jump-eu-north** | Helsinki (hel1) | CX22 | Debian 12 | `jump.fedishark.eu` |
+
+Both hosts share a single DNS name (`jump.fedishark.eu`) via round-robin A/AAAA records.
 
 ## What It Creates
 
-- Hetzner Cloud SSH keys from `ssh_public_keys`.
-- Firewall allowing SSH (22), HTTP (80), HTTPS (443), and Tailscale UDP 41641.
-- One or more Debian 12 servers from `jump_hosts`.
-- rDNS records pointing `jump.fedishark.eu` for each host.
-- DNS A/AAAA records for `jump.fedishark.eu` that include all host IPs.
+- **SSH keys** — uploaded from `terraform.tfvars` for remote access
+- **Firewall** — allows SSH (22), HTTP (80), HTTPS (443), and Tailscale UDP (41641)
+- **Servers** — Debian 12 with cloud-init (package updates + python3 for Ansible)
+- **DNS** — forward A/AAAA records and reverse DNS for `jump.fedishark.eu`
 
-## Prereqs
+## Prerequisites
 
-- OpenTofu >= 1.6.0.
-- SOPS with the key material needed to decrypt `secrets.enc.json`.
-- Hetzner Cloud API token stored in the encrypted secrets file.
+- [OpenTofu](https://opentofu.org/) >= 1.6.0
+- [SOPS](https://github.com/getsops/sops) with the age key to decrypt `secrets.enc.json`
+
+The Hetzner Cloud API token is stored in the encrypted secrets file and read via the SOPS provider.
 
 ## Usage
 
@@ -26,11 +35,25 @@ tofu apply
 
 ## Configuration
 
-- `variables.tf` defines `ssh_public_keys`, `jump_hosts`, and `dns_zone_name`.
-- `terraform.tfvars` provides example SSH keys.
-- `secrets.enc.json` is decrypted by the SOPS provider for the Hetzner token.
+| File | Purpose |
+|------|---------|
+| `variables.tf` | Defines `ssh_public_keys`, `jump_hosts`, and `dns_zone_name` |
+| `terraform.tfvars` | SSH public keys for server access |
+| `secrets.enc.json` | SOPS-encrypted Hetzner API token |
+| `versions.tf` | Provider versions (hcloud ~> 1.49, sops ~> 1.1) |
+
+Add or modify jump hosts by editing the `jump_hosts` variable — each entry needs a `location` and `server_type`.
 
 ## Outputs
 
-- `jump_hosts`: IPs, location, status, and rDNS per host.
-- `ansible_inventory`: INI-formatted inventory for quick use with Ansible.
+- **`jump_hosts`** — IP addresses, location, status, and rDNS per server
+- **`ansible_inventory`** — ready-to-use INI inventory for Ansible provisioning
+
+## CI
+
+Every pull request runs four checks:
+
+1. **Format** — `tofu fmt -check`
+2. **Validate** — `tofu validate`
+3. **TFLint** — linting for best practices
+4. **tfsec** — security scanning
