@@ -16,7 +16,7 @@ output "ansible_inventory" {
   value = join("\n", concat(
     ["[jump_hosts]"],
     [for name, server in hcloud_server.jump :
-      "${name} ansible_host=${server.ipv4_address} ansible_user=root location=${server.location}"
+      "${name} ansible_host=${server.ipv4_address} ansible_user=ansible location=${server.location}"
     ],
     [""]
   ))
