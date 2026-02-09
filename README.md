@@ -6,8 +6,8 @@ OpenTofu configuration for Hetzner Cloud jump hosts that serve as entry points i
 
 | Host | Location | Type | OS | DNS |
 |------|----------|------|----|-----|
-| **jump-eu-central** | Nuremberg (nbg1) | CX22 | Debian 12 | `jump.fedishark.eu` |
-| **jump-eu-north** | Helsinki (hel1) | CX22 | Debian 12 | `jump.fedishark.eu` |
+| **jump-eu-central** | Nuremberg (nbg1) | CX22 | Debian 13 | `jump.fedishark.eu` |
+| **jump-eu-north** | Helsinki (hel1) | CX22 | Debian 13 | `jump.fedishark.eu` |
 
 Both hosts share a single DNS name (`jump.fedishark.eu`) via round-robin A/AAAA records.
 
@@ -15,7 +15,7 @@ Both hosts share a single DNS name (`jump.fedishark.eu`) via round-robin A/AAAA 
 
 - **SSH keys** — uploaded from `terraform.tfvars` for remote access
 - **Firewall** — allows SSH (22), HTTP (80), HTTPS (443), and Tailscale UDP (41641)
-- **Servers** — Debian 12 with cloud-init (package updates + python3 for Ansible)
+- **Servers** — Debian 13 with cloud-init (package updates + python3 for Ansible)
 - **DNS** — forward A/AAAA records and reverse DNS for `jump.fedishark.eu`
 
 ## Prerequisites
