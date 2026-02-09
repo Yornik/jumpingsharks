@@ -45,6 +45,12 @@ resource "hcloud_server" "jump" {
   image       = "debian-12"
   server_type = each.value.server_type
   location    = each.value.location
+  user_data   = <<-CLOUD_INIT
+    #cloud-config
+    package_update: true
+    packages:
+      - python3
+  CLOUD_INIT
 
   ssh_keys     = [for key in hcloud_ssh_key.keys : key.id]
   firewall_ids = [hcloud_firewall.jump.id]
@@ -65,7 +71,7 @@ resource "hcloud_rdns" "jump_ipv4" {
 
   server_id  = hcloud_server.jump[each.key].id
   ip_address = hcloud_server.jump[each.key].ipv4_address
-  dns_ptr    = "${each.key}.fedishark.eu"
+  dns_ptr    = "jump.fedishark.eu"
 }
 
 resource "hcloud_rdns" "jump_ipv6" {
@@ -73,5 +79,31 @@ resource "hcloud_rdns" "jump_ipv6" {
 
   server_id  = hcloud_server.jump[each.key].id
   ip_address = hcloud_server.jump[each.key].ipv6_address
-  dns_ptr    = "${each.key}.fedishark.eu"
+  dns_ptr    = "jump.fedishark.eu"
+}
+
+resource "hcloud_zone_rrset" "jump_a" {
+  zone = var.dns_zone_name
+  name = "jump"
+  type = "A"
+  ttl  = 300
+
+  records = [
+    for server in hcloud_server.jump : {
+      value = server.ipv4_address
+    }
+  ]
+}
+
+resource "hcloud_zone_rrset" "jump_aaaa" {
+  zone = var.dns_zone_name
+  name = "jump"
+  type = "AAAA"
+  ttl  = 300
+
+  records = [
+    for server in hcloud_server.jump : {
+      value = server.ipv6_address
+    }
+  ]
 }

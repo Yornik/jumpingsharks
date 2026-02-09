@@ -7,7 +7,8 @@ OpenTofu configuration for Hetzner jump hosts. It provisions SSH keys, a firewal
 - Hetzner Cloud SSH keys from `ssh_public_keys`.
 - Firewall allowing SSH (22), HTTP (80), HTTPS (443), and Tailscale UDP 41641.
 - One or more Debian 12 servers from `jump_hosts`.
-- rDNS records in the `fedishark.eu` zone for each host.
+- rDNS records pointing `jump.fedishark.eu` for each host.
+- DNS A/AAAA records for `jump.fedishark.eu` that include all host IPs.
 
 ## Prereqs
 
@@ -25,7 +26,7 @@ tofu apply
 
 ## Configuration
 
-- `variables.tf` defines `ssh_public_keys` and `jump_hosts`.
+- `variables.tf` defines `ssh_public_keys`, `jump_hosts`, and `dns_zone_name`.
 - `terraform.tfvars` provides example SSH keys.
 - `secrets.enc.json` is decrypted by the SOPS provider for the Hetzner token.
 
