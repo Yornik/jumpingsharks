@@ -1,2 +1,4 @@
-# CHANGE THIS to your actual SSH public key
-ssh_public_key = "ssh-ed25519 CHANGEME"
+ssh_public_keys = {
+  "cloudhetzner" = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDaE2VFYqVuCLoMXKXao1o9OcWNDjC69v1FTLrItGJp1g8yrWxti26I8h9k8dBahL92cTExaEiNuwYO6xTRT0UstrEARew5LYdUxkCf3kHSIMONn8PbspT19jw+HwNbkBn8scOLO1sHBINJfOLafdhpEUDUzhCgG2o93i4U0nTS148JO4RdUm0OOZ+Zr8hnXRvkXbgp52dBdHuncbmcsMN44gFN3Ogz9Hd78NZMGsYK3CCV8c85bo+X5CzzhygqQbO2ipmQom0pXhapX+848wUvVLS6Zh0SfuGiG2hABW/tA0QWSWZcNYCDdzvuIDLrx/WDbBABqdydNaExHkypFuhDsEoBRh/mUbLCjzzQLvXJd5Qi/yzu0HHyyQlLOuvKJumODPkoO/QUOgWvzvMaMurdmHxL3IMQ0p1itdhl3nnndylPAFtLW5PQ30EVfX8xzlanu7WHeAIbAl3nMyAwXEkMmTiy8Nbf6o4/HXYPNrstz7YpPj7OqRDXf+uge4fIvO0= root@Yornik-nas"
+  "wsl-privepc"  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOiJ5UN3roep5TtAbYpncz3ePiPpAU5PZSFHthCsyq3f unbuntu-on-windows-privepc"
+}

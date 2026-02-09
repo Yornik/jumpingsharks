@@ -1,6 +1,6 @@
-variable "ssh_public_key" {
-  description = "SSH public key for jump host access"
-  type        = string
+variable "ssh_public_keys" {
+  description = "SSH public keys for jump host access"
+  type        = map(string)
 }
 
 variable "jump_hosts" {
