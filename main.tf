@@ -49,7 +49,7 @@ resource "hcloud_server" "jump" {
   image       = "debian-12"
   server_type = each.value.server_type
   location    = each.value.location
-  user_data = <<-CLOUD_INIT
+  user_data   = <<-CLOUD_INIT
     #cloud-config
     package_update: true
     packages:
