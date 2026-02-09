@@ -6,6 +6,18 @@ output "jump_hosts" {
       ipv6     = server.ipv6_address
       location = server.location
       status   = server.status
+      rdns     = "${name}.fedishark.eu"
     }
   }
+}
+
+output "ansible_inventory" {
+  description = "Ansible inventory in INI format"
+  value = join("\n", concat(
+    ["[jump_hosts]"],
+    [for name, server in hcloud_server.jump :
+      "${name} ansible_host=${server.ipv4_address} ansible_user=root location=${server.location}"
+    ],
+    [""]
+  ))
 }

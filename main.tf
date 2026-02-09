@@ -1,6 +1,8 @@
-resource "hcloud_ssh_key" "default" {
-  name       = "jumpingsharks"
-  public_key = var.ssh_public_key
+resource "hcloud_ssh_key" "keys" {
+  for_each = var.ssh_public_keys
+
+  name       = each.key
+  public_key = each.value
 }
 
 resource "hcloud_firewall" "jump" {
@@ -27,6 +29,7 @@ resource "hcloud_firewall" "jump" {
     source_ips = ["0.0.0.0/0", "::/0"]
   }
 
+  # Tailscale WireGuard
   rule {
     direction  = "in"
     protocol   = "udp"
@@ -43,8 +46,7 @@ resource "hcloud_server" "jump" {
   server_type = each.value.server_type
   location    = each.value.location
 
-  ssh_keys = [hcloud_ssh_key.default.id]
-
+  ssh_keys     = [for key in hcloud_ssh_key.keys : key.id]
   firewall_ids = [hcloud_firewall.jump.id]
 
   public_net {
@@ -56,4 +58,20 @@ resource "hcloud_server" "jump" {
     role    = "jump-host"
     managed = "opentofu"
   }
+}
+
+resource "hcloud_rdns" "jump_ipv4" {
+  for_each = var.jump_hosts
+
+  server_id  = hcloud_server.jump[each.key].id
+  ip_address = hcloud_server.jump[each.key].ipv4_address
+  dns_ptr    = "${each.key}.fedishark.eu"
+}
+
+resource "hcloud_rdns" "jump_ipv6" {
+  for_each = var.jump_hosts
+
+  server_id  = hcloud_server.jump[each.key].id
+  ip_address = hcloud_server.jump[each.key].ipv6_address
+  dns_ptr    = "${each.key}.fedishark.eu"
 }
