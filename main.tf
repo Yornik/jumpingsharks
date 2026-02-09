@@ -5,10 +5,6 @@ resource "hcloud_ssh_key" "keys" {
   public_key = each.value
 }
 
-data "hcloud_dns_zone" "main" {
-  name = var.dns_zone_name
-}
-
 resource "hcloud_firewall" "jump" {
   name = "jump-host-fw"
 
@@ -86,22 +82,28 @@ resource "hcloud_rdns" "jump_ipv6" {
   dns_ptr    = "jump.fedishark.eu"
 }
 
-resource "hcloud_dns_record" "jump_a" {
-  for_each = hcloud_server.jump
+resource "hcloud_zone_rrset" "jump_a" {
+  zone = var.dns_zone_name
+  name = "jump"
+  type = "A"
+  ttl  = 300
 
-  zone_id = data.hcloud_dns_zone.main.id
-  name    = "jump"
-  type    = "A"
-  value   = each.value.ipv4_address
-  ttl     = 300
+  records = [
+    for server in hcloud_server.jump : {
+      value = server.ipv4_address
+    }
+  ]
 }
 
-resource "hcloud_dns_record" "jump_aaaa" {
-  for_each = hcloud_server.jump
+resource "hcloud_zone_rrset" "jump_aaaa" {
+  zone = var.dns_zone_name
+  name = "jump"
+  type = "AAAA"
+  ttl  = 300
 
-  zone_id = data.hcloud_dns_zone.main.id
-  name    = "jump"
-  type    = "AAAA"
-  value   = each.value.ipv6_address
-  ttl     = 300
+  records = [
+    for server in hcloud_server.jump : {
+      value = server.ipv6_address
+    }
+  ]
 }
