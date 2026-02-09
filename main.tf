@@ -42,7 +42,7 @@ resource "hcloud_server" "jump" {
   for_each = var.jump_hosts
 
   name        = each.key
-  image       = "debian-12"
+  image       = "debian-13"
   server_type = each.value.server_type
   location    = each.value.location
   user_data   = <<-CLOUD_INIT
