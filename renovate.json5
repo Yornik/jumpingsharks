@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "baseBranches": ["main"],
+  "labels": ["renovate", "dependencies"],
+  "packageRules": [
+    {
+      // Patch provider updates are safe to auto-merge
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "groupName": "patch updates"
+    },
+    {
+      // Minor and major provider updates need manual review
+      "matchUpdateTypes": ["minor", "major"],
+      "automerge": false
+    }
+  ]
+}
