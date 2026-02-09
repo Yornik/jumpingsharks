@@ -12,11 +12,11 @@ variable "jump_hosts" {
   default = {
     jump-eu-central = {
       location    = "nbg1"
-      server_type = "cx22"
+      server_type = "cx23"
     }
     jump-eu-north = {
       location    = "hel1"
-      server_type = "cx22"
+      server_type = "cx23"
     }
   }
 }

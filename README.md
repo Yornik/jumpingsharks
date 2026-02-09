@@ -6,8 +6,8 @@ OpenTofu configuration for Hetzner Cloud jump hosts that serve as entry points i
 
 | Host | Location | Type | OS | DNS |
 |------|----------|------|----|-----|
-| **jump-eu-central** | Nuremberg (nbg1) | CX22 | Debian 13 | `jump.fedishark.eu` |
-| **jump-eu-north** | Helsinki (hel1) | CX22 | Debian 13 | `jump.fedishark.eu` |
+| **jump-eu-central** | Nuremberg (nbg1) | CX23 | Debian 13 | `jump.fedishark.eu` |
+| **jump-eu-north** | Helsinki (hel1) | CX23 | Debian 13 | `jump.fedishark.eu` |
 
 Both hosts share a single DNS name (`jump.fedishark.eu`) via round-robin A/AAAA records.
 
