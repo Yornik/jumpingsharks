@@ -1,0 +1,14 @@
+.terraform/
+.tofu/
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+*.dec.json
+*.dec.yaml
+*.dec.tf
+# Keep .terraform.lock.hcl in git for reproducibility
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
