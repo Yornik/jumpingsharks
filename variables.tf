@@ -20,3 +20,9 @@ variable "jump_hosts" {
     }
   }
 }
+
+variable "dns_zone_name" {
+  description = "Hetzner DNS zone name for public records"
+  type        = string
+  default     = "fedishark.eu"
+}
