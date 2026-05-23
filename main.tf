@@ -29,6 +29,14 @@ resource "hcloud_firewall" "jump" {
     source_ips = ["0.0.0.0/0", "::/0"]
   }
 
+  # GitLab SSH (git.yornik.eu) — HAProxy :2222 → gitlab-shell over Tailscale
+  rule {
+    direction  = "in"
+    protocol   = "tcp"
+    port       = "2222"
+    source_ips = ["0.0.0.0/0", "::/0"]
+  }
+
   # Tailscale WireGuard
   rule {
     direction  = "in"
