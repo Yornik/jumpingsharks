@@ -95,10 +95,10 @@ State is local (`terraform.tfstate` is gitignored, kept on the operator workstat
 
 ## Homelab constraints
 
-Even with dual edge hosts, the platform retains acknowledged single points of failure:
+Even with dual edge hosts in two regions, the platform retains acknowledged single points of failure on the home side:
 
 - Single home power feed
 - Single home internet uplink
 - Shared NAS storage dependency for part of the workload set
 
-These are conscious tradeoffs. Eliminating them fully is feasible but currently disproportionate to the intended scope.
+A UPS doesn't actually solve the power outage failure mode — when neighborhood power drops, the ISP's street-cabinet gear (DSLAM / GPON / DOCSIS amplifier) typically loses power within minutes, so the cluster stays up locally but with no upstream connectivity. Mitigation needs an independent secondary uplink (LTE/5G failover with its own battery). These are conscious tradeoffs. Fully eliminating them is feasible but currently disproportionate to the intended scope.
