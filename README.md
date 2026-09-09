@@ -1,104 +1,97 @@
 # jumpingsharks
 
-OpenTofu infrastructure layer for the sharkshere homelab platform — provisions the public edge (two Hetzner Cloud servers, firewall rules, SSH key injection, DNS, and reverse DNS) that fronts a 4-node Talos Kubernetes cluster hosting GitLab CE, OpenProject, Vaultwarden, Jellyfin, and ~10 other public HTTPS services.
+This repository creates the public edge of the sharkshere platform with OpenTofu. The edge is two small Hetzner Cloud servers, one firewall, their DNS records and their reverse DNS.
 
-This is the foundation of a three-repo platform:
+## What this repository does
 
-| Repo | Layer | Responsibility |
+- It creates two servers: `jump-eu-central` in Nuremberg and `jump-eu-north` in Helsinki.
+- It creates one firewall with five inbound rules: `tcp/22`, `tcp/80`, `tcp/443`, `tcp/2222` and `udp/41641`.
+- It creates the A and AAAA records for `jump.fedishark.eu` and the PTR records for each server.
+- It writes an inventory output that `sharkshere-ansible` reads.
+
+This repository is one of three:
+
+| Repository | Layer | Function |
 |---|---|---|
-| `jumpingsharks` (this repo) | infrastructure | provisions Hetzner edge hosts + DNS/rDNS via OpenTofu |
-| [`sharkshere-ansible`](https://github.com/Yornik/sharkshere-ansible) | hosts | hardens edge hosts, deploys HAProxy + Tailscale + fail2ban |
-| [`sharkshere-gitops`](https://github.com/Yornik/sharkshere-gitops) | workloads | reconciles ~40 ArgoCD Applications behind that edge |
+| `jumpingsharks` (this repository) | infrastructure | Creates the two Hetzner edge hosts and their DNS with OpenTofu. |
+| [`sharkshere-ansible`](https://github.com/Yornik/sharkshere-ansible) | hosts | Hardens the edge hosts. Installs HAProxy, Tailscale and fail2ban. |
+| [`sharkshere-gitops`](https://github.com/Yornik/sharkshere-gitops) | workloads | Reconciles the applications in the cluster with ArgoCD. |
 
-## Where this sits
+## Documents
 
-```mermaid
-flowchart LR
-  Tofu["OpenTofu (this repo)"] -->|provisions| Edge["Hetzner edge hosts<br/>+ firewall + DNS"]
-  Edge -->|inventory| Ansible["sharkshere-ansible"]
-  Ansible -->|configures| EdgeHardened["Hardened edge with<br/>HAProxy + Tailscale"]
-  EdgeHardened -->|fronts| Cluster["Talos K8s cluster<br/>(sharkshere-gitops)"]
-```
+| Document | Content |
+|---|---|
+| [`docs/tech/README.md`](docs/tech/README.md) | Full technical overview: resource list, host table, design notes, state management, constraints. |
+| [`docs/styleguide.md`](docs/styleguide.md) | Writing rules for this README, the files in `docs/` and manifest comments. |
 
-## Scope
+## Repository layout
 
-| Resource | Count | Notes |
-|---|---|---|
-| `hcloud_server` | 2 | Debian 13, `CX23`, dual-region (NBG1 + HEL1) |
-| `hcloud_firewall.jump` | 1 | inbound rules attached to both jump hosts |
-| Firewall rules | 5 inbound | `tcp/22`, `tcp/80`, `tcp/443`, `tcp/2222` (GitLab SSH), `udp/41641` (Tailscale WireGuard) |
-| `hcloud_ssh_key` | 2 | injected at server creation |
-| `hcloud_rdns` | 4 | IPv4 + IPv6 PTR per host → `jump.fedishark.eu` |
-| `hcloud_zone_rrset` | 2 | A + AAAA round-robin for `jump.fedishark.eu` |
+| File | Content |
+|---|---|
+| `main.tf` | Servers, firewall, SSH keys, DNS records, reverse DNS. |
+| `variables.tf` | `ssh_public_keys`, `jump_hosts`, `dns_zone_name`. |
+| `terraform.tfvars` | Public SSH keys. Committed. No private key is in this repository. |
+| `secrets.enc.json` | The Hetzner API token, encrypted with SOPS. |
+| `outputs.tf` | `jump_hosts` and `ansible_inventory`. |
+| `providers.tf`, `versions.tf` | Provider configuration and version pins. |
+| `renovate.json5` | Renovate rules for provider and tool versions. |
 
-## Edge hosts
+## Before you start
 
-| Host | Location | Type | OS | Public DNS |
-|------|----------|------|----|------------|
-| `jump-eu-central` | Nuremberg (`nbg1`) | `CX23` | Debian 13 | `jump.fedishark.eu` |
-| `jump-eu-north` | Helsinki (`hel1`) | `CX23` | Debian 13 | `jump.fedishark.eu` |
+Make sure that you have:
 
-Both publish under the same `jump.fedishark.eu` name via round-robin A/AAAA, giving the cluster two geographically separate POPs with minimal complexity.
+- OpenTofu 1.6 or later.
+- SOPS and the age key that decrypts `secrets.enc.json`.
+- Access to the Hetzner Cloud project.
+- The file `terraform.tfstate` from the operator workstation. See [State](#state).
 
-## Engineering highlights
+## How to apply a change
 
-- **IaC discipline maintained.** `tofu plan` returns clean on `main`; drift between the live state and code is treated as a defect, not an inconvenience. Verified end-to-end during the GitLab `:2222` rollout — HAProxy config on both jump hosts matched the Ansible template byte-for-byte, no out-of-band edits.
-- **Single firewall, attached at boot.** Adding a new inbound port (e.g. `:2222` for GitLab SSH) is one rule block plus `tofu apply` — Hetzner attaches the firewall at server creation so newly-allowed traffic flows immediately.
-- **Outputs as contract.** `outputs.tf` produces an `ansible_inventory` shape consumed directly by `sharkshere-ansible`, so infra and host config repos are coupled cleanly without manual inventory editing.
-- **SOPS-encrypted secrets.** Hetzner API token lives in `secrets.enc.json`, decrypted at plan/apply time by the `carlpett/sops` provider.
-- **PR-gated.** `tofu fmt -check`, `tofu validate`, `tflint`, and `tfsec` all run on every PR; merges to `main` are reviewed.
+1. Edit the `.tf` files.
+2. Run `tofu fmt`.
+3. Run `tofu init` if you changed a provider.
+4. Run `tofu plan`. Read each line of the plan.
+5. Open a pull request. CI runs four checks. See [CI checks](#ci-checks).
+6. Merge the pull request.
+7. Run `tofu apply` from `main`.
+8. Run `tofu plan` again. Make sure that it reports no changes.
 
-## Prerequisites
+CAUTION: Do not change a server, a firewall rule or a DNS record in the Hetzner console. The next `tofu plan` shows the difference. Put the change in git.
 
-- [OpenTofu](https://opentofu.org/) >= 1.6
-- [SOPS](https://github.com/getsops/sops) + age key for `secrets.enc.json`
-- A Hetzner Cloud project with API access
+WARNING: `tofu apply` can replace a server. A replaced server has a new IP address and an empty disk. Read the plan for the word `replace` before you confirm.
 
-## Usage
+## How to open a new inbound port
 
-```sh
-tofu init
-tofu plan      # review every change before apply
-tofu apply
-```
+1. Add one `rule` block to `hcloud_firewall.jump` in `main.tf`.
+2. Apply the change with the procedure above.
+3. Add the HAProxy frontend in `sharkshere-ansible`.
 
-## Important files
+Hetzner attaches the firewall when it creates the server. New rules take effect at once.
 
-| File | Purpose |
-|------|---------|
-| `main.tf` | servers, firewall, SSH keys, DNS records, rDNS |
-| `variables.tf` | `ssh_public_keys`, `jump_hosts` (per-host server_type + location), `dns_zone_name` |
-| `terraform.tfvars` | public SSH keys (committed; the private keys live nowhere in this repo) |
-| `secrets.enc.json` | SOPS-encrypted Hetzner API token |
-| `outputs.tf` | `jump_hosts` (with IPs + PTR) and `ansible_inventory` for downstream consumption |
-| `providers.tf` | provider configuration |
-| `versions.tf` | provider/version pinning |
-| `renovate.json5` | bumps provider pins + tooling versions |
+## How to add an SSH key
 
-## Outputs
+1. Add the public key to `ssh_public_keys` in `terraform.tfvars`.
+2. Apply the change with the procedure above.
 
-- `jump_hosts` — per-host metadata including IPv4, IPv6, PTR, location
-- `ansible_inventory` — pre-formatted inventory consumed by `sharkshere-ansible`
+NOTE: Hetzner injects SSH keys only at server creation. For an existing server, add the key with `sharkshere-ansible`.
 
-## CI
+## State
 
-PR checks:
+The state file is local. It is not in git. It is on the operator workstation. A backup of the state is next to the SOPS secrets.
 
-1. `tofu fmt -check`
-2. `tofu validate`
-3. `tflint`
-4. `tfsec`
+CAUTION: If you lose the state file, OpenTofu does not know the servers exist. Do not run `tofu apply` without the state file. Import the resources first.
 
-## State management
+## CI checks
 
-State is local (`terraform.tfstate` is gitignored, kept on the operator workstation). No remote backend — the homelab's blast radius doesn't justify the operational overhead of S3/etcd-backed state with locking. A backup of state lives alongside the SOPS-encrypted secrets.
+CI runs on each pull request. All four checks must pass before a merge.
 
-## Homelab constraints
+| Check | What it does |
+|---|---|
+| `tofu fmt -check` | Checks the formatting of the `.tf` files. |
+| `tofu validate` | Checks the syntax and the references. |
+| `tflint` | Finds errors and deprecated usage. |
+| `tfsec` | Finds insecure settings. |
 
-Even with dual edge hosts in two regions, the platform retains acknowledged single points of failure on the home side:
+## Known limits
 
-- Single home power feed
-- Single home internet uplink
-- Shared NAS storage dependency for part of the workload set
-
-A UPS doesn't actually solve the power outage failure mode — when neighborhood power drops, the ISP's street-cabinet gear (DSLAM / GPON / DOCSIS amplifier) typically loses power within minutes, so the cluster stays up locally but with no upstream connectivity. Mitigation needs an independent secondary uplink (LTE/5G failover with its own battery). These are conscious tradeoffs. Fully eliminating them is feasible but currently disproportionate to the intended scope.
+The edge has two hosts in two regions. The cluster behind it is in a home. The home has one power feed, one internet uplink and one NAS. These are accepted limits. See [`docs/tech/README.md`](docs/tech/README.md#homelab-constraints) for the reasons.
