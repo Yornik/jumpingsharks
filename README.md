@@ -2,8 +2,6 @@
 
 This repository creates the public edge of the sharkshere platform with OpenTofu. The edge is two small Hetzner Cloud servers, one firewall, their DNS records and their reverse DNS.
 
-This document uses a style based on ASD-STE100 Simplified Technical English. Sentences are short. Each sentence gives one instruction or one fact.
-
 ## What this repository does
 
 - It creates two servers: `jump-eu-central` in Nuremberg and `jump-eu-north` in Helsinki.
@@ -24,6 +22,7 @@ This repository is one of three:
 | Document | Content |
 |---|---|
 | [`docs/tech/README.md`](docs/tech/README.md) | Full technical overview: resource list, host table, design notes, state management, constraints. |
+| [`docs/styleguide.md`](docs/styleguide.md) | Writing rules for this README, the files in `docs/` and manifest comments. |
 
 ## Repository layout
 
